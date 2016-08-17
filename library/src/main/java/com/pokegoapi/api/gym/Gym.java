@@ -21,7 +21,9 @@ import POGOProtos.Enums.PokemonIdOuterClass;
 import POGOProtos.Enums.TeamColorOuterClass;
 import POGOProtos.Map.Fort.FortDataOuterClass.FortData;
 import POGOProtos.Networking.Requests.Messages.GetGymDetailsMessageOuterClass.GetGymDetailsMessage;
+import POGOProtos.Networking.Requests.Messages.FortDeployPokemonMessageOuterClass.FortDeployPokemonMessage;
 import POGOProtos.Networking.Requests.RequestTypeOuterClass.RequestType;
+import POGOProtos.Networking.Responses.FortDeployPokemonResponseOuterClass.FortDeployPokemonResponse;
 import POGOProtos.Networking.Responses.GetGymDetailsResponseOuterClass.GetGymDetailsResponse;
 
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -165,6 +167,65 @@ public class Gym implements MapPoint {
 		}
 
 		return data;
+	}
+
+	/**
+	 * Get this gym's level
+	 *
+	 * @return Gym level
+	 */
+	public int getLevel() {
+		long points = getPoints();
+		if (points < 2000)
+			return 1;
+		else if (points < 4000)
+			return 2;
+		else if (points < 8000)
+			return 3;
+		else if (points < 12000)
+			return 4;
+		else if (points < 16000)
+			return 5;
+		else if (points < 20000)
+			return 6;
+		else if (points < 30000)
+			return 7;
+		else if (points < 40000)
+			return 8;
+		else if (points < 50000)
+			return 9;
+		else
+			return 10;
+	}
+
+	/**
+	 * Deploy a pokemon to this gym.
+	 *
+	 * @param pokemon Pokemon to deploy
+	 * @return FortDeployPokemonResponse
+	 * @throws LoginFailedException  if the login failed
+	 * @throws RemoteServerException When a buffer exception is thrown
+	 */
+	public FortDeployPokemonResponse deployPokemonToGym(Pokemon pokemon) throws LoginFailedException,
+			RemoteServerException {
+		FortDeployPokemonMessage reqMsg = FortDeployPokemonMessage
+				.newBuilder()
+				.setFortId(this.getId())
+				.setPokemonId(pokemon.getId())
+				.setPlayerLatitude(api.getLatitude())
+				.setPlayerLongitude(api.getLongitude())
+				.build();
+
+		ServerRequest serverRequest = new ServerRequest(RequestType.FORT_DEPLOY_POKEMON,reqMsg);
+		api.getRequestHandler().sendServerRequests(serverRequest);
+		FortDeployPokemonResponse response;
+		try {
+			response = FortDeployPokemonResponse.parseFrom(serverRequest.getData());
+		} catch (InvalidProtocolBufferException e) {
+			throw new RemoteServerException();
+		}
+
+		return response;
 	}
 
 	protected PokemonGo getApi() {
